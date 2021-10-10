@@ -1,4 +1,5 @@
 import random from './random.js'
+import distance from './distance.js'
 
 /**
  * Use the K-Means algorithm for divide a dataset into K clusters
@@ -6,11 +7,16 @@ import random from './random.js'
  * @param {number} k 
  * @return {Array.<Array<number>>}
  */
-
 export default function kmeans(dataset, k) {
     k = k > dataset.length ? dataset.length : k
+    let centroids = randomCentroinds(dataset, k),
+        previousCentroids = []
 
-    const centroids = randomCentroinds(dataset, k)
+    while (!arraysEquals(previousCentroids, centroids)) {
+        previousCentroids = [...centroids]
+        const clusters = classify(dataset, centroids)
+        console.log(clusters)
+    }
 }
 
 function randomCentroinds(dataset, k) {
@@ -18,12 +24,12 @@ function randomCentroinds(dataset, k) {
     const max = dataset.length
     let indexesOfCentroids = []
 
-    while(indexesOfCentroids.length < k){
+    while (indexesOfCentroids.length < k) {
         const indexOfCentroid = random(min, max)
         const isRepeated = indexesOfCentroids.indexOf(indexOfCentroid) > -1 ? true : false
-        if(!isRepeated){
+        if (!isRepeated) {
             indexesOfCentroids.push(indexOfCentroid)
-        } 
+        }
     }
 
     const centroids = indexesOfCentroids.map(indexOfCentroid => (
@@ -31,4 +37,35 @@ function randomCentroinds(dataset, k) {
     ))
 
     return centroids
+}
+
+function arraysEquals(array1, array2) {
+    if (array1.length !== array2.length)
+        return false
+
+    return array1.every((itemOfArray1, index) => itemOfArray1 === array2[index])
+}
+
+function classify(dataset, centroids) {
+    let clusters = centroids.map(centroid => ({
+        centroid,
+        points: []
+    }))
+
+    dataset.forEach((point) => {
+        let indexOfClosestCentroid = 0,
+            distanceToClosestCentroid = distance(point, centroids[indexOfClosestCentroid])
+
+        centroids.forEach((centroid, index) => {
+            const distanceToCentroid = distance(point, centroid)
+            if(distanceToCentroid < distanceToClosestCentroid){
+                indexOfClosestCentroid = index
+                distanceToClosestCentroid = distanceToCentroid
+            }
+        })
+
+        clusters[indexOfClosestCentroid].points.push(point)
+    })
+
+    return clusters
 }
