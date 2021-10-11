@@ -7,19 +7,28 @@ import distance from './distance.js'
  * @param {number} k 
  * @return {Array.<Array<number>>}
  */
-export default function kmeans(dataset, k) {
+export default function kmeans(dataset, k, maxIterations = 50) {
     k = k > dataset.length ? dataset.length : k
-    let centroids = randomCentroinds(dataset, k),
-        previousCentroids = []
+    let centroids = getRandomCentroinds(dataset, k),
+        previousCentroids = [],
+        clusters = [],
+        iterations = 0,
+        shouldContinue = true
+    
+    while (shouldContinue) {
+        clusters = classifyDataset(dataset, centroids)
+        centroids = calculateCentroids(dataset, clusters)
 
-    while (!arraysEquals(previousCentroids, centroids)) {
         previousCentroids = [...centroids]
-        const clusters = classify(dataset, centroids)
-        console.log(clusters)
+
+        shouldContinue = iterations < maxIterations && !isArraysEquals(previousCentroids, centroids)
+        iterations += 1
     }
+
+    return { clusters }
 }
 
-function randomCentroinds(dataset, k) {
+function getRandomCentroinds(dataset, k) {
     const min = 0
     const max = dataset.length
     let indexesOfCentroids = []
@@ -39,14 +48,14 @@ function randomCentroinds(dataset, k) {
     return centroids
 }
 
-function arraysEquals(array1, array2) {
+function isArraysEquals(array1, array2) {
     if (array1.length !== array2.length)
         return false
 
     return array1.every((itemOfArray1, index) => itemOfArray1 === array2[index])
 }
 
-function classify(dataset, centroids) {
+function classifyDataset(dataset, centroids) {
     let clusters = centroids.map(centroid => ({
         centroid,
         points: []
@@ -68,4 +77,32 @@ function classify(dataset, centroids) {
     })
 
     return clusters
+}
+
+function calculateCentroids(dataset, clusters){
+    const centroids = clusters.map(cluster => {
+        let centroid
+
+        if(cluster.points.length)
+            centroid = calculatePointsMean(cluster.points)
+        else
+            centroid = getRandomCentroinds(dataset, 1)[0]
+        
+        return centroid
+    })
+    
+    return centroids
+}
+
+function calculatePointsMean(points){
+    const nMeans = points[0].length
+    let means = Array(nMeans).fill(0)
+    
+    points.forEach(point => {
+        point.forEach((value, index) => {
+            means[index] += value / 3
+        })
+    })
+
+    return means
 }
